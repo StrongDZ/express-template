@@ -1,0 +1,22 @@
+import getLogger from "../utils/LoggerUtils";
+import cron from "node-cron";
+import { cronTime } from "../common/constants/TimeConstants";
+import { JobConfig } from "../models/JobConfig";
+import { ExampleJob } from "../jobs/ExampleJob";
+
+const logger = getLogger("Example");
+
+export const autoExampleJob = cron.schedule(cronTime.per10Seconds, async () => {
+    try {
+        const config: JobConfig = {
+            name: "Example",
+            configKey: "example_key",
+            retryCount: 0,
+        };
+
+        const job = new ExampleJob(config);
+        await job.run();
+    } catch (error: any) {
+        logger.error(`Error when doing example job: ${error}`);
+    }
+});

@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+    server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: production-stage
+        container_name: server
+        ports:
+            - ${PORT}:${PORT}
+        volumes:
+            - ./logs:/home/node/app/logs
+        restart: always
+        networks:
+            - default
+        env_file:
+            - .env
+
+networks:
+    default:
