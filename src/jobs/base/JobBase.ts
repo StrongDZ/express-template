@@ -9,6 +9,7 @@ export abstract class JobBase {
     protected jobConfig: JobConfig;
     protected retryAttempts: number = 0;
     protected jobManager = JobManager.getInstance();
+    protected startedAt = Math.floor(Date.now() / 1000);
 
     constructor(config: JobConfig) {
         this.jobConfig = config;
