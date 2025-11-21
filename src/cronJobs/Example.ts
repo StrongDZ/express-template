@@ -1,12 +1,12 @@
 import getLogger from "../utils/LoggerUtils";
 import cron from "node-cron";
-import { cronTime } from "../common/constants/TimeConstants";
+import { CronTime } from "../common/constants/TimeConstants";
 import { JobConfig } from "../models/JobConfig";
 import { ExampleJob } from "../jobs/ExampleJob";
 
 const logger = getLogger("Example");
 
-export const autoExampleJob = cron.schedule(cronTime.per10Seconds, async () => {
+export const autoExampleJob = cron.schedule(CronTime.per10Seconds, async () => {
     try {
         const config: JobConfig = {
             name: "Example",
