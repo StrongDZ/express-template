@@ -1,14 +1,16 @@
 import express, { Application } from "express";
 import * as swagger from "swagger-ui-express";
-import { readFileSync } from "fs";
 import cors from "cors";
 import compression from "compression";
 import { rateLimit } from "express-rate-limit";
 import morgan from "morgan";
 import * as dotenv from "dotenv";
 import { CronJobs } from "./cronJobs";
-import { Config, OrchaiDBConfig } from "./common/config";
+import { Config } from "./common/config";
 import { ExampleRouter } from "./routers/ExampleRouter";
+import swaggerDocs from "../swagger/swagger.json";
+import { BackoffStrategy, retry } from "./utils/RetryUtils";
+import { setup } from "./common/connections/SetupWallet";
 
 dotenv.config();
 
@@ -57,8 +59,7 @@ class Server {
     }
 
     private configSwagger(): void {
-        const docs = JSON.parse(readFileSync("swagger/swagger.json", "utf-8"));
-        this.app.use("/api-docs", swagger.serve, swagger.setup(docs));
+        this.app.use("/api-docs", swagger.serve, swagger.setup(swaggerDocs));
     }
 
     public start(): void {
@@ -69,6 +70,7 @@ class Server {
 }
 
 async function startServer(): Promise<void> {
+    await retry(setup, [], 3, 1, BackoffStrategy.linear);
     const server = new Server();
     server.start();
     await CronJobs.start();

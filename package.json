@@ -7,8 +7,10 @@
         "test": "ts-node src/test.ts",
         "start": "ts-node src/server.ts",
         "dev": "nodemon src/server.ts",
-        "build": "rm -rf build && tsc",
-        "deploy": "node build/server.js"
+        "clean-all": "rm -rf build && rm -rf node_modules",
+        "clean-build": "test -d build && find build -mindepth 1 -path build/secrets -prune -o -exec rm -rf {} + || true",
+        "build": "npm run clean-build && npm ci && tsc",
+        "deploy": "node build/src/server.js"
     },
     "keywords": [],
     "author": "",
@@ -17,6 +19,7 @@
         "compression": "^1.8.1",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
+        "ethers": "^6.15.0",
         "express": "^5.1.0",
         "express-rate-limit": "^8.2.1",
         "fs": "^0.0.1-security",

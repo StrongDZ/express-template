@@ -20,3 +20,5 @@ export const autoExampleJob = cron.schedule(cronTime.per10Seconds, async () => {
         logger.error(`Error when doing example job: ${error}`);
     }
 });
+
+autoExampleJob.stop();
