@@ -4,6 +4,11 @@ dotenv.config();
 
 export const BLOCK_PER_YEAR = 37101176;
 
+export class VmType {
+    static readonly EVM = "evm";
+    static readonly SOLANA = "solana";
+}
+
 export class NetworkType {
     static readonly SOLANA = "solana";
     static readonly SOLANA_DEVNET = "solana_devnet";
@@ -53,6 +58,12 @@ export class Chains {
         [Chains.BSC_TESTNET]: NetworkType.BSC_TESTNET,
         [Chains.ARBITRUM]: NetworkType.ARBITRUM,
         [Chains.BASE]: NetworkType.BASE,
+    };
+
+    static readonly vmType: Record<string, string> = {
+        [Chains.SOLANA]: VmType.SOLANA,
+        [Chains.ARBITRUM]: VmType.EVM,
+        [Chains.BASE]: VmType.EVM,
     };
 }
 

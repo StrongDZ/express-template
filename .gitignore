@@ -34,9 +34,6 @@ Thumbs.db
 *.sln
 
 #Test
-test/*
-src/tests/*
-test.ts
-tests.ts
+**/*test*/**
 **/secrets/
 .qodo

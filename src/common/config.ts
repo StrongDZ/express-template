@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv";
 import path from "path";
+import { Chains } from "./constants/NetworkConstants";
 
 dotenv.config();
 
@@ -32,7 +33,33 @@ export const RedisConfig = {
     DEFAULT_TTL_SECONDS: Number(process.env.REDIS_DEFAULT_TTL_SECONDS ?? 10),
 };
 
-export const CryptoConfig = {
-    PASSWORD: process.env.PASSWORD ?? "",
-    MNEMONIC_FILE: path.join(SECRETS_DIR, process.env.MNEMONIC_FILE ?? "mnemonic.txt"),
-};
+export class CryptoConfig {
+    static PASSWORD: string = process.env.PASSWORD ?? "";
+    static readonly mnemonicKeys = {
+        BOT1: "bot1",
+        BOT2: "bot2",
+    } satisfies Record<string, string>;
+
+    static readonly mnemonicConfigs = {
+        [CryptoConfig.mnemonicKeys.BOT1]: {
+            path: path.join(SECRETS_DIR, process.env.MNEMONIC_FILE ?? "mnemonic.txt"),
+            // Accounts for each chain, format: { [chainId]: accountIndex }
+            accounts: [{ chainId: Chains.SOLANA, index: 0 }],
+        },
+        [CryptoConfig.mnemonicKeys.BOT2]: {
+            path: path.join(SECRETS_DIR, process.env.MNEMONIC_FILE_2 ?? "mnemonic2.txt"),
+            accounts: [
+                { chainId: Chains.BASE, index: 0 },
+                { chainId: Chains.ARBITRUM, index: 1 },
+            ],
+        },
+    } satisfies Record<string, { path: string; accounts: { chainId: string; index: number }[] }>;
+
+    static getMnemonicConfig(key: string): { path: string; accounts: { chainId: string; index: number }[] } {
+        const config = this.mnemonicConfigs[key];
+        if (!config) {
+            throw new Error(`Unknown mnemonic key: ${key}`);
+        }
+        return config;
+    }
+}

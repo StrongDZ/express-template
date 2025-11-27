@@ -1,9 +1,10 @@
 import inquirer from "inquirer";
 import * as crypto from "crypto";
+import fs from "fs";
 import { CryptoConfig } from "../config";
 import { loadFromFile, saveToFile } from "../../utils/FileUtils";
-import { getEvmWallet } from "../../utils/evm/EvmWalletHelper";
 import getLogger from "../../utils/LoggerUtils";
+import { validateMnemonic } from "../../utils/WalletHelper";
 
 const logger = getLogger("SetupWallet");
 
@@ -57,80 +58,129 @@ async function loadPassword(): Promise<string> {
 }
 
 // Get decrypted mnemonic from file
-export async function getMnemonicFromFile(): Promise<string> {
-    const mnemonicFile = CryptoConfig.MNEMONIC_FILE;
-    const encryptedData = loadFromFile(mnemonicFile);
+export async function getMnemonicFromFile(key: string): Promise<string> {
+    const { path } = CryptoConfig.getMnemonicConfig(key);
+    const encryptedData = loadFromFile(path);
     const password = await loadPassword();
     return decryptMnemonic(encryptedData, password);
 }
 
-async function setupMnemonic() {
-    logger.info("=== Setup Wallet ===");
+type MnemonicStatus = {
+    key: string;
+    path: string;
+    accounts: { chainId: string; index: number }[];
+    initialized: boolean;
+};
 
-    const password = await loadPassword();
-    let setup = true;
+function getMnemonicStatuses(): MnemonicStatus[] {
+    return Object.entries(CryptoConfig.mnemonicConfigs).map(([key, config]) => ({
+        key,
+        path: config.path,
+        accounts: config.accounts,
+        initialized: fs.existsSync(config.path),
+    }));
+}
 
-    try {
-        loadFromFile(CryptoConfig.MNEMONIC_FILE);
-    } catch (error) {
-        setup = false;
-    }
+function logMnemonicStatuses(statuses: MnemonicStatus[]) {
+    const displayData = statuses.map(({ key, initialized, accounts }) => ({
+        key,
+        chains: accounts.map(({ chainId, index }) => `${chainId} - index:${index}`).join(", "),
+        initialized,
+    }));
+    console.table(displayData);
+}
 
-    if (setup) {
-        const { refreshMnemonic } = await inquirer.prompt([
+async function promptMnemonicUpdate(password: string) {
+    while (true) {
+        const statuses = getMnemonicStatuses();
+        const allInitialized = statuses.every((status) => status.initialized);
+
+        const { action } = await inquirer.prompt([
             {
                 type: "list",
-                name: "refreshMnemonic",
-                message: "Do you want to refresh the mnemonic?",
+                name: "action",
+                message: "Do you want to initialize/refresh mnemonics?",
                 choices: ["yes", "no"],
                 default: "no",
             },
         ]);
 
-        if (refreshMnemonic === "no") {
+        if (action === "no") {
+            if (!allInitialized) {
+                logger.warn("Some mnemonics are not initialized. Please initialize all files before exiting.");
+                continue;
+            }
             return;
         }
-    }
 
-    try {
-        const answers = await inquirer.prompt([
+        const { key } = await inquirer.prompt([
+            {
+                type: "list",
+                name: "key",
+                message: "Select mnemonic key to initialize/refresh:",
+                choices: statuses.map((status) => ({
+                    name: `${status.key} (${status.initialized ? "initialized" : "not initialized"})`,
+                    value: status.key,
+                })),
+            },
+        ]);
+
+        const { mnemonic } = await inquirer.prompt([
             {
                 type: "password",
                 name: "mnemonic",
-                message: "Enter mnemonic:",
+                message: `Enter mnemonic for "${key}":`,
                 validate: (input) => input.trim() !== "" || "Mnemonic is required",
             },
         ]);
 
-        const { mnemonic } = answers;
-
         const encryptedMnemonic = encryptMnemonic(mnemonic, password);
-        saveToFile(encryptedMnemonic, CryptoConfig.MNEMONIC_FILE);
+        const { path } = CryptoConfig.getMnemonicConfig(key);
+        saveToFile(encryptedMnemonic, path);
+        logger.info(`✓ Mnemonic encrypted and saved to: ${path}`);
+        logMnemonicStatuses(getMnemonicStatuses());
+    }
+}
 
-        logger.info(`✓ Mnemonic encrypted and saved to: ${CryptoConfig.MNEMONIC_FILE}`);
-        return;
+async function setupMnemonic() {
+    logger.info("=== Setup Wallet ===");
+
+    const statuses = getMnemonicStatuses();
+    logMnemonicStatuses(statuses);
+
+    const password = await loadPassword();
+
+    try {
+        await promptMnemonicUpdate(password);
     } catch (error: any) {
         if (error.isTtyError || error.name === "ExitPromptError") {
             logger.info("\nOperation cancelled by user.");
             return;
         }
         logger.error("Error setting up wallet:", error);
-        return;
     }
 }
 
-async function verifyPassword(password: string) {
-    try {
-        await getEvmWallet(password);
-        logger.info("Valid password!");
-    } catch (error) {
-        logger.error("The password is incorrect");
-        throw new Error("Invalid password");
+async function verifyPassword() {
+    const statuses = getMnemonicStatuses();
+
+    for (const { key, accounts, initialized } of statuses) {
+        if (!initialized) {
+            throw new Error(`Mnemonic file for "${key}" is not initialized`);
+        }
+
+        accounts.forEach(({ chainId }) => {
+            if (!validateMnemonic(key, chainId)) {
+                throw new Error(`Invalid mnemonic for key "${key}" (chain ${chainId})`);
+            }
+        });
     }
+
+    logger.info("All mnemonic files are valid.");
 }
 
 export async function setup() {
     CryptoConfig.PASSWORD = "";
     await setupMnemonic();
-    await verifyPassword(CryptoConfig.PASSWORD);
+    await verifyPassword();
 }
