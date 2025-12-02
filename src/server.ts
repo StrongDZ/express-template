@@ -11,6 +11,7 @@ import { ExampleRouter } from "./routers/ExampleRouter";
 import swaggerDocs from "../swagger/swagger.json";
 import { BackoffStrategy, retry } from "./utils/RetryUtils";
 import { setup } from "./common/connections/SetupWallet";
+import { providerManager } from "./utils/solana/RpcUtils";
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ async function startServer(): Promise<void> {
     await retry(setup, [], 3, 1, BackoffStrategy.linear);
     const server = new Server();
     server.start();
+    await providerManager.init();
     await CronJobs.start();
 }
 
