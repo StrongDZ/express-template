@@ -36,6 +36,7 @@
         "winston": "^3.18.3"
     },
     "devDependencies": {
+        "@types/bs58": "^4.0.4",
         "@types/compression": "^1.8.1",
         "@types/cors": "^2.8.19",
         "@types/express-rate-limit": "^5.1.3",

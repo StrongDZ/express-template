@@ -4,26 +4,26 @@ import fs from "fs";
 import { CryptoConfig } from "../config";
 import { loadFromFile, saveToFile } from "../../utils/FileUtils";
 import getLogger from "../../utils/LoggerUtils";
-import { validateMnemonic } from "../../utils/WalletHelper";
+import { validatePrivateKey } from "../../utils/WalletHelper";
 
 const logger = getLogger("SetupWallet");
 
-// Simple AES-256-CTR encryption
-function encryptMnemonic(mnemonic: string, password: string): string {
+// Simple AES-256-CTR encryption for secrets (mnemonic/private key)
+function encryptSecret(secret: string, password: string): string {
     const algorithm = "aes-256-ctr";
     const secretKey = crypto.scryptSync(password, "salt", 32);
     const iv = crypto.randomBytes(16);
 
     const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
-    let encrypted = cipher.update(mnemonic, "utf8", "hex");
+    let encrypted = cipher.update(secret, "utf8", "hex");
     encrypted += cipher.final("hex");
 
     // Combine IV and encrypted data
     return iv.toString("hex") + ":" + encrypted;
 }
 
-// Simple AES-256-CTR decryption
-function decryptMnemonic(encryptedData: string, password: string): string {
+// Simple AES-256-CTR decryption for secrets (mnemonic/private key)
+function decryptSecret(encryptedData: string, password: string): string {
     const algorithm = "aes-256-ctr";
     const secretKey = crypto.scryptSync(password, "salt", 32);
 
@@ -44,7 +44,7 @@ async function loadPassword(): Promise<string> {
             {
                 type: "password",
                 name: "password",
-                message: "Enter password to encrypt mnemonic:",
+                message: "Enter password to encrypt private keys:",
                 validate: (input) => input.trim() !== "" || "Password is required",
             },
         ]);
@@ -57,49 +57,49 @@ async function loadPassword(): Promise<string> {
     return CryptoConfig.PASSWORD;
 }
 
-// Get decrypted mnemonic from file
-export async function getMnemonicFromFile(key: string): Promise<string> {
-    const { path } = CryptoConfig.getMnemonicConfig(key);
+// Get decrypted private key from file
+export function getPrivateKeyFromFile(key: string): string {
+    const { path } = CryptoConfig.getPrivateKeyConfig(key);
     const encryptedData = loadFromFile(path);
-    const password = await loadPassword();
-    return decryptMnemonic(encryptedData, password);
+    const password = CryptoConfig.PASSWORD;
+    return decryptSecret(encryptedData, password);
 }
 
-type MnemonicStatus = {
+type PrivateKeyStatus = {
     key: string;
     path: string;
-    accounts: { chainId: string; index: number }[];
+    chainIds: string[];
     initialized: boolean;
 };
 
-function getMnemonicStatuses(): MnemonicStatus[] {
-    return Object.entries(CryptoConfig.mnemonicConfigs).map(([key, config]) => ({
+function getPrivateKeyStatuses(): PrivateKeyStatus[] {
+    return Object.entries(CryptoConfig.privateKeyConfigs).map(([key, config]) => ({
         key,
         path: config.path,
-        accounts: config.accounts,
+        chainIds: config.chainIds,
         initialized: fs.existsSync(config.path),
     }));
 }
 
-function logMnemonicStatuses(statuses: MnemonicStatus[]) {
-    const displayData = statuses.map(({ key, initialized, accounts }) => ({
+function logPrivateKeyStatuses(statuses: PrivateKeyStatus[]) {
+    const displayData = statuses.map(({ key, initialized, chainIds }) => ({
         key,
-        chains: accounts.map(({ chainId, index }) => `${chainId} - index:${index}`).join(", "),
+        chainIds: chainIds.join(","),
         initialized,
     }));
     console.table(displayData);
 }
 
-async function promptMnemonicUpdate(password: string) {
+async function promptPrivateKeyUpdate(password: string) {
     while (true) {
-        const statuses = getMnemonicStatuses();
+        const statuses = getPrivateKeyStatuses();
         const allInitialized = statuses.every((status) => status.initialized);
 
         const { action } = await inquirer.prompt([
             {
                 type: "list",
                 name: "action",
-                message: "Do you want to initialize/refresh mnemonics?",
+                message: "Do you want to initialize/refresh private keys?",
                 choices: ["yes", "no"],
                 default: "no",
             },
@@ -107,7 +107,7 @@ async function promptMnemonicUpdate(password: string) {
 
         if (action === "no") {
             if (!allInitialized) {
-                logger.warn("Some mnemonics are not initialized. Please initialize all files before exiting.");
+                logger.warn("Some private keys are not initialized. Please initialize all files before exiting.");
                 continue;
             }
             return;
@@ -117,7 +117,7 @@ async function promptMnemonicUpdate(password: string) {
             {
                 type: "list",
                 name: "key",
-                message: "Select mnemonic key to initialize/refresh:",
+                message: "Select key to initialize/refresh:",
                 choices: statuses.map((status) => ({
                     name: `${status.key} (${status.initialized ? "initialized" : "not initialized"})`,
                     value: status.key,
@@ -125,33 +125,33 @@ async function promptMnemonicUpdate(password: string) {
             },
         ]);
 
-        const { mnemonic } = await inquirer.prompt([
+        const { privateKey } = await inquirer.prompt([
             {
                 type: "password",
-                name: "mnemonic",
-                message: `Enter mnemonic for "${key}":`,
-                validate: (input) => input.trim() !== "" || "Mnemonic is required",
+                name: "privateKey",
+                message: `Enter private key for "${key}":`,
+                validate: (input) => input.trim() !== "" || "Private key is required",
             },
         ]);
 
-        const encryptedMnemonic = encryptMnemonic(mnemonic, password);
-        const { path } = CryptoConfig.getMnemonicConfig(key);
-        saveToFile(encryptedMnemonic, path);
-        logger.info(`✓ Mnemonic encrypted and saved to: ${path}`);
-        logMnemonicStatuses(getMnemonicStatuses());
+        const encryptedPrivateKey = encryptSecret(privateKey, password);
+        const { path } = CryptoConfig.getPrivateKeyConfig(key);
+        saveToFile(encryptedPrivateKey, path);
+        logger.info(`✓ Private key encrypted and saved to: ${path}`);
+        logPrivateKeyStatuses(getPrivateKeyStatuses());
     }
 }
 
-async function setupMnemonic() {
+async function setupPrivateKeys() {
     logger.info("=== Setup Wallet ===");
 
-    const statuses = getMnemonicStatuses();
-    logMnemonicStatuses(statuses);
+    const statuses = getPrivateKeyStatuses();
+    logPrivateKeyStatuses(statuses);
 
     const password = await loadPassword();
 
     try {
-        await promptMnemonicUpdate(password);
+        await promptPrivateKeyUpdate(password);
     } catch (error: any) {
         if (error.isTtyError || error.name === "ExitPromptError") {
             logger.info("\nOperation cancelled by user.");
@@ -161,26 +161,27 @@ async function setupMnemonic() {
     }
 }
 
-async function verifyPassword() {
-    const statuses = getMnemonicStatuses();
+function verifyPassword() {
+    const statuses = getPrivateKeyStatuses();
 
-    for (const { key, accounts, initialized } of statuses) {
+    for (const { key, chainIds, initialized } of statuses) {
         if (!initialized) {
-            throw new Error(`Mnemonic file for "${key}" is not initialized`);
+            throw new Error(`Private key file for "${key}" is not initialized`);
         }
 
-        accounts.forEach(({ chainId }) => {
-            if (!validateMnemonic(key, chainId)) {
-                throw new Error(`Invalid mnemonic for key "${key}" (chain ${chainId})`);
+        for (const chainId of chainIds) {
+            const isValid = validatePrivateKey(key, chainId);
+            if (!isValid) {
+                throw new Error(`Invalid private key for key "${key}" (chain ${chainId})`);
             }
-        });
+        }
     }
 
-    logger.info("All mnemonic files are valid.");
+    logger.info("All private key files are valid.");
 }
 
 export async function setup() {
     CryptoConfig.PASSWORD = "";
-    await setupMnemonic();
-    await verifyPassword();
+    await setupPrivateKeys();
+    verifyPassword();
 }

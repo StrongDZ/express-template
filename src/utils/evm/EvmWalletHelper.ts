@@ -1,31 +1,20 @@
-import { ethers, HDNodeWallet } from "ethers";
+import { JsonRpcProvider, Wallet, Signer } from "ethers";
 import { RpcProviders } from "../../common/constants/NetworkConstants";
-import getLogger from "../LoggerUtils";
-import { getMnemonicFromFile } from "../../common/connections/SetupWallet";
+import { getPrivateKeyFromFile } from "../../common/connections/SetupWallet";
 import { CryptoConfig } from "../../common/config";
 
-const logger = getLogger("ContractUtils");
-
-export function getProvider(rpcUrl: string) {
-    return new ethers.JsonRpcProvider(rpcUrl);
+ function getEvmWalletFromPrivateKey(chainId: string, privateKey: string): Signer {
+    const provider = new JsonRpcProvider(RpcProviders[chainId]);
+    const normalizedPrivateKey = privateKey.trim().startsWith("0x") ? privateKey.trim() : `0x${privateKey.trim()}`;
+    const wallet = new Wallet(normalizedPrivateKey, provider);
+    return wallet;
 }
 
-export async function getEvmWalletFromMnemonic(chainId: string, mnemonic: string, accountIndex: number): Promise<ethers.Signer> {
-    const provider = new ethers.JsonRpcProvider(RpcProviders[chainId]);
-
-    // Tạo ví từ mnemonic với derivation path dựa theo index
-    const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-    const wallet = HDNodeWallet.fromPhrase(mnemonic, "", derivationPath);
-
-    return wallet.connect(provider);
-}
-
-export async function getEvmWalletFromKey(key: string, chainId: string): Promise<ethers.Signer> {
-    const config = CryptoConfig.getMnemonicConfig(key);
-    const accountIndex = config.accounts.find((account) => account.chainId === chainId)?.index;
-    if (!accountIndex) {
-        throw new Error(`Account index not found for key "${key}" on chain "${chainId}"`);
+export function getEvmWalletFromKey(key: string, chainId: string): Signer {
+    const config = CryptoConfig.getPrivateKeyConfig(key);
+    if (!config.chainIds.includes(chainId)) {
+        throw new Error(`Key "${key}" is not configured for chain "${chainId}"`);
     }
-    const mnemonic = await getMnemonicFromFile(key);
-    return getEvmWalletFromMnemonic(chainId, mnemonic, accountIndex);
+    const privateKey = getPrivateKeyFromFile(key);
+    return getEvmWalletFromPrivateKey(chainId, privateKey);
 }

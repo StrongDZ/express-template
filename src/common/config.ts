@@ -35,30 +35,26 @@ export const RedisConfig = {
 
 export class CryptoConfig {
     static PASSWORD: string = process.env.PASSWORD ?? "";
-    static readonly mnemonicKeys = {
+    static readonly KeyFiles = {
         BOT1: "bot1",
         BOT2: "bot2",
     } satisfies Record<string, string>;
 
-    static readonly mnemonicConfigs = {
-        [CryptoConfig.mnemonicKeys.BOT1]: {
-            path: path.join(SECRETS_DIR, process.env.MNEMONIC_FILE ?? "mnemonic.txt"),
-            // Accounts for each chain, format: { [chainId]: accountIndex }
-            accounts: [{ chainId: Chains.SOLANA, index: 0 }],
+    static readonly privateKeyConfigs = {
+        [CryptoConfig.KeyFiles.BOT1]: {
+            path: path.join(SECRETS_DIR, `${CryptoConfig.KeyFiles.BOT1}_private_key.txt`),
+            chainIds: [Chains.SOLANA],
         },
-        [CryptoConfig.mnemonicKeys.BOT2]: {
-            path: path.join(SECRETS_DIR, process.env.MNEMONIC_FILE_2 ?? "mnemonic2.txt"),
-            accounts: [
-                { chainId: Chains.BASE, index: 0 },
-                { chainId: Chains.ARBITRUM, index: 1 },
-            ],
+        [CryptoConfig.KeyFiles.BOT2]: {
+            path: path.join(SECRETS_DIR, `${CryptoConfig.KeyFiles.BOT2}_private_key.txt`),
+            chainIds: [Chains.BASE],
         },
-    } satisfies Record<string, { path: string; accounts: { chainId: string; index: number }[] }>;
+    } satisfies Record<string, { path: string; chainIds: string[] }>;
 
-    static getMnemonicConfig(key: string): { path: string; accounts: { chainId: string; index: number }[] } {
-        const config = this.mnemonicConfigs[key];
+    static getPrivateKeyConfig(key: string): { path: string; chainIds: string[] } {
+        const config = this.privateKeyConfigs[key];
         if (!config) {
-            throw new Error(`Unknown mnemonic key: ${key}`);
+            throw new Error(`Unknown private key file: ${key}`);
         }
         return config;
     }
