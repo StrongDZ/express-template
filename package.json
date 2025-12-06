@@ -9,7 +9,7 @@
         "dev": "nodemon src/server.ts",
         "clean-all": "rm -rf build && rm -rf node_modules",
         "clean-build": "test -d build && find build -mindepth 1 -path build/secrets -prune -o -exec rm -rf {} + || true",
-        "build": "npm run clean-build && npm ci && tsc",
+        "build": "npm run clean-build && tsc",
         "deploy": "node build/src/server.js"
     },
     "keywords": [],
