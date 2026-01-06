@@ -1,8 +1,5 @@
 import { JobConfig } from "../models/JobConfig";
-import getLogger from "../utils/LoggerUtils";
 import { JobBase } from "./base/JobBase";
-
-const logger = getLogger("ExampleJob");
 
 export class ExampleJob extends JobBase {
     constructor(config: JobConfig) {
