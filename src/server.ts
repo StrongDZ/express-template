@@ -4,7 +4,6 @@ import cors from "cors";
 import compression from "compression";
 import { rateLimit } from "express-rate-limit";
 import morgan from "morgan";
-import * as dotenv from "dotenv";
 import { CronJobs } from "./cronJobs";
 import { Config } from "./common/config";
 import { ExampleRouter } from "./routers/ExampleRouter";
@@ -12,14 +11,9 @@ import swaggerDocs from "../swagger/swagger.json";
 import { BackoffStrategy, retry } from "./utils/RetryUtils";
 import { setup } from "./common/connections/SetupWallet";
 
-dotenv.config();
-
-const limitMs = Number(process.env.LIMIT_MS ?? 60 * 1000);
-const limitRequest = Number(process.env.LIMIT_REQUEST ?? 100);
-
 const limiter = rateLimit({
-    windowMs: limitMs,
-    limit: limitRequest,
+    windowMs: Number(Config.LIMIT_MS),
+    limit: Number(Config.LIMIT_REQUEST),
     standardHeaders: "draft-7",
     legacyHeaders: false,
 });
@@ -35,7 +29,7 @@ class Server {
     }
 
     public config(): void {
-        this.app.set("port", process.env.PORT || 8000);
+        this.app.set("port", Number(Config.PORT));
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(compression());
