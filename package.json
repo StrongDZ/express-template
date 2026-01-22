@@ -8,7 +8,7 @@
         "dev": "nodemon src/server.ts",
         "clean-all": "rm -rf build && rm -rf node_modules",
         "clean-build": "test -d build && find build -mindepth 1 -path build/secrets -prune -o -exec rm -rf {} + || true",
-        "build": "npm run clean-build && tsup",
+        "build": "npm run type-check && npm run clean-build && tsup",
         "type-check": "tsc --noEmit"
     },
     "keywords": [],
