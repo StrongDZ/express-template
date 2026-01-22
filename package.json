@@ -7,7 +7,7 @@
         "start": "node build/src/server.js",
         "dev": "nodemon src/server.ts",
         "clean-all": "rm -rf build && rm -rf node_modules",
-        "clean-build": "test -d build && find build -mindepth 1 -path build/secrets -prune -o -exec rm -rf {} + || true",
+        "clean-build": "find build -mindepth 1 ! -path '*/secrets*' -type f -exec rm -f {} + && find build -mindepth 1 -type d -empty -not -path '*/secrets*' -delete",
         "build": "npm run type-check && npm run clean-build && tsup",
         "type-check": "tsc --noEmit"
     },

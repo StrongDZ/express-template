@@ -64,6 +64,7 @@ class Server {
 }
 
 async function startServer(): Promise<void> {
+    await CronJobs.stop();
     await retry(setup, [], 3, 1, BackoffStrategy.linear);
     const server = new Server();
     server.start();
