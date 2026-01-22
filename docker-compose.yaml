@@ -10,7 +10,7 @@ services:
         ports:
             - ${PORT}:${PORT}
         volumes:
-            - ./logs:/home/node/app/logs
+            - ./logs:/home/node/app/build/logs
         restart: always
         networks:
             - default

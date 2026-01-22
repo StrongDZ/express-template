@@ -1,5 +1,6 @@
 import winston from "winston";
-import { Config, PROJECT_DIR } from "../common/config";
+import DailyRotateFile from "winston-daily-rotate-file";
+import { Config, LOG_DIR } from "../common/config";
 import path from "path";
 
 const getLogger = (loggerName: string) => {
@@ -19,15 +20,23 @@ const getLogger = (loggerName: string) => {
         transports: Config.IS_PRODUCTION
             ? [
                   new winston.transports.Console({ format: consoleFormat }),
-                  new winston.transports.File({
-                      filename: path.join(PROJECT_DIR, "logs/error.log"),
+                  new DailyRotateFile({
+                      filename: path.join(LOG_DIR, "error-%DATE%.log"),
+                      datePattern: "YYYY-MM-DD",
                       level: "error",
                       format: fileFormat,
+                      maxSize: "20m", // Khi file đạt 20MB sẽ rotate
+                      maxFiles: "14d", // Giữ lại 14 ngày, sau đó tự động xóa file cũ
+                      zippedArchive: true, // Nén file cũ để tiết kiệm dung lượng
                   }),
-                  new winston.transports.File({
-                      filename: path.join(PROJECT_DIR, "logs/debug.log"),
+                  new DailyRotateFile({
+                      filename: path.join(LOG_DIR, "debug-%DATE%.log"),
+                      datePattern: "YYYY-MM-DD",
                       level: "debug",
                       format: fileFormat,
+                      maxSize: "20m", // Khi file đạt 20MB sẽ rotate
+                      maxFiles: "14d", // Giữ lại 14 ngày, sau đó tự động xóa file cũ
+                      zippedArchive: true, // Nén file cũ để tiết kiệm dung lượng
                   }),
               ]
             : [new winston.transports.Console({ format: consoleFormat })],

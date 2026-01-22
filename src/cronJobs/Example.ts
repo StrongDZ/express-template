@@ -20,6 +20,3 @@ export const autoExampleJob = cron.schedule(CronTime.per10Seconds, async () => {
         logger.error(`Error when doing example job: ${error}`);
     }
 });
-
-// This is important to stop the cronjob until the setup phase is done. Do this for every cronjob.
-autoExampleJob.stop();

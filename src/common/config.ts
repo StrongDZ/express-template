@@ -6,13 +6,16 @@ dotenv.config();
 
 export const PROJECT_DIR = path.resolve(__dirname, "..", "..");
 export const SECRETS_DIR = path.join(PROJECT_DIR, "secrets");
+export const LOG_DIR = path.join(PROJECT_DIR, "logs");
 
 export const Config = {
     IS_PRODUCTION: process.env.IS_PRODUCTION === "true",
     HOST: process.env.HOST ?? "localhost",
-    PORT: process.env.PORT ?? 8000,
+    PORT: process.env.PORT ?? "8000",
     API_SCHEMES: process.env.API_SCHEMES ?? "http",
     API_KEY: process.env.API_KEY ?? "your_api_key",
+    LIMIT_MS: process.env.LIMIT_MS ?? "60000",
+    LIMIT_REQUEST: process.env.LIMIT_REQUEST ?? "100",
 };
 
 export const OrchaiDBConfig = {

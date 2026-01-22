@@ -12,10 +12,7 @@ COPY . .
 # 1. Đặt môi trường là production
 ENV NODE_ENV=production
 
-# 2. Chạy check lỗi Type trước (Quan trọng, vì lệnh build ở package.json đã bỏ cái này)
-RUN npm run type-check
-
-# 3. Chạy build (Lúc này tsup sẽ tự đọc NODE_ENV=production để bật minify và tắt sourcemap)
+# Build
 RUN npm run build
 
 # ===== Production stage =====

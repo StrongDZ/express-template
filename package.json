@@ -7,8 +7,8 @@
         "start": "node build/src/server.js",
         "dev": "nodemon src/server.ts",
         "clean-all": "rm -rf build && rm -rf node_modules",
-        "clean-build": "test -d build && find build -mindepth 1 -path build/secrets -prune -o -exec rm -rf {} + || true",
-        "build": "npm run clean-build && tsup",
+        "clean-build": "find build -mindepth 1 ! -path '*/secrets*' -type f -exec rm -f {} + && find build -mindepth 1 -type d -empty -not -path '*/secrets*' -delete",
+        "build": "npm run type-check && npm run clean-build && tsup",
         "type-check": "tsc --noEmit"
     },
     "keywords": [],
@@ -32,7 +32,9 @@
         "node-cron": "^4.2.1",
         "swagger-ui-express": "^5.0.1",
         "tweetnacl": "^1.0.3",
-        "winston": "^3.18.3"
+        "winston": "^3.18.3",
+        "winston-daily-rotate-file": "^5.0.0",
+        "winston-transport": "^4.9.0"
     },
     "devDependencies": {
         "@types/bs58": "^4.0.4",

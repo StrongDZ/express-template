@@ -3,7 +3,7 @@ import { RpcProviders } from "../../common/constants/NetworkConstants";
 import { getPrivateKeyFromFile } from "../../common/connections/SetupWallet";
 import { CryptoConfig } from "../../common/config";
 
- function getEvmWalletFromPrivateKey(chainId: string, privateKey: string): Signer {
+function getEvmWalletFromPrivateKey(chainId: string, privateKey: string): Signer {
     const provider = new JsonRpcProvider(RpcProviders[chainId]);
     const normalizedPrivateKey = privateKey.trim().startsWith("0x") ? privateKey.trim() : `0x${privateKey.trim()}`;
     const wallet = new Wallet(normalizedPrivateKey, provider);
