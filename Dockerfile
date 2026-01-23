@@ -9,7 +9,7 @@ FROM base AS build-stage
 WORKDIR /home/node/app
 COPY . .
 
-# 1. Đặt môi trường là production
+# Đặt môi trường là production
 ENV NODE_ENV=production
 
 # Build
