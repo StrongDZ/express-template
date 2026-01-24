@@ -4,7 +4,7 @@ import fs from "fs";
 import { CryptoConfig } from "../config";
 import { loadFromFile, saveToFile } from "../../utils/FileUtils";
 import getLogger from "../../utils/LoggerUtils";
-import { validatePrivateKey } from "../../utils/WalletHelper";
+import { validatePrivateKey } from "../../utils/blockchain/WalletHelper";
 
 const logger = getLogger("SetupWallet");
 

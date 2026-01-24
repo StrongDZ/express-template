@@ -1,6 +1,6 @@
-import { Chains, VmType } from "../common/constants/NetworkConstants";
-import { getEvmWalletFromKey } from "./evm/EvmWalletHelper";
-import { getSolanaWalletFromKey } from "./solana/SolanaWalletHelper";
+import { Chains, VmType } from "../../common/constants/NetworkConstants";
+import { getEvmWalletFromKey } from "./evm/EvmHelper";
+import { getSolanaWalletFromKey } from "./solana/SolanaHelper";
 
 export function validatePrivateKey(key: string, chainId: string): boolean {
     try {
